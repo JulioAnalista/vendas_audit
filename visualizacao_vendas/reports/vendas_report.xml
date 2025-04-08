@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template para relatório de vendas -->
+    <record id="action_report_vendas" model="ir.actions.report">
+        <field name="name">Relatório de Vendas</field>
+        <field name="model">visualizacao_vendas.analise</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">visualizacao_vendas.report_vendas_template</field>
+        <field name="report_file">visualizacao_vendas.report_vendas</field>
+        <field name="binding_model_id" ref="model_visualizacao_vendas_analise"/>
+        <field name="binding_type">report</field>
+    </record>
+    
+    <template id="report_vendas_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h2>Relatório de Vendas</h2>
+                    
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <h4>Período: <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y')"/></h4>
+                        </div>
+                    </div>
+                    
+                    <table class="table table-bordered mt-4">
+                        <thead>
+                            <tr>
+                                <th>Referência</th>
+                                <th>Data</th>
+                                <th>Emitente</th>
+                                <th>Destinatário</th>
+                                <th class="text-right">Quantidade</th>
+                                <th class="text-right">Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="docs" t-as="o">
+                                <tr>
+                                    <td><span t-field="o.name"/></td>
+                                    <td><span t-field="o.data_emissao" t-options="{'widget': 'date'}"/></td>
+                                    <td><span t-field="o.emitente_id"/></td>
+                                    <td><span t-field="o.destinatario_id"/></td>
+                                    <td class="text-right"><span t-field="o.quantidade_nfe"/></td>
+                                    <td class="text-right"><span t-field="o.valor_total"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-right"><strong>Total</strong></td>
+                                <td class="text-right"><strong t-esc="sum(docs.mapped('quantidade_nfe'))"/></td>
+                                <td class="text-right"><strong t-esc="sum(docs.mapped('valor_total'))" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    
+                </div>
+            </t>
+        </t>
+    </template>
+    
+    <!-- Template para relatório de produtos vendidos -->
+    <record id="action_report_produtos_vendidos" model="ir.actions.report">
+        <field name="name">Relatório de Produtos Vendidos</field>
+        <field name="model">visualizacao_vendas.produtos_analise</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">visualizacao_vendas.report_produtos_template</field>
+        <field name="report_file">visualizacao_vendas.report_produtos</field>
+        <field name="binding_model_id" ref="model_visualizacao_vendas_produtos_analise"/>
+        <field name="binding_type">report</field>
+    </record>
+    
+    <template id="report_produtos_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h2>Relatório de Produtos Vendidos</h2>
+                    
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <h4>Data: <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y')"/></h4>
+                        </div>
+                    </div>
+                    
+                    <table class="table table-bordered mt-4">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Produto</th>
+                                <th>NCM</th>
+                                <th>Período</th>
+                                <th class="text-right">Quantidade</th>
+                                <th class="text-right">Valor Unitário</th>
+                                <th class="text-right">Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="docs" t-as="o">
+                                <tr>
+                                    <td><span t-field="o.codigo"/></td>
+                                    <td><span t-field="o.name"/></td>
+                                    <td><span t-field="o.ncm"/></td>
+                                    <td>
+                                        <t t-if="o.data_emissao_dia">
+                                            <span t-field="o.data_emissao_dia"/>
+                                        </t>
+                                        <t t-elif="o.data_emissao_mes">
+                                            <span t-field="o.data_emissao_mes"/>
+                                        </t>
+                                        <t t-else="">
+                                            <span t-field="o.data_emissao_ano"/>
+                                        </t>
+                                    </td>
+                                    <td class="text-right"><span t-field="o.quantidade_vendida"/></td>
+                                    <td class="text-right"><span t-field="o.valor_unitario_medio"/></td>
+                                    <td class="text-right"><span t-field="o.valor_total"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-right"><strong>Total</strong></td>
+                                <td class="text-right"><strong t-esc="sum(docs.mapped('quantidade_vendida'))"/></td>
+                                <td class="text-right">-</td>
+                                <td class="text-right"><strong t-esc="sum(docs.mapped('valor_total'))" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo> 

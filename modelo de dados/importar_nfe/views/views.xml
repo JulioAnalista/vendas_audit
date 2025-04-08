@@ -1,0 +1,774 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+  <!-- ========================= -->
+  <!-- NFe Views                 -->
+  <!-- ========================= -->
+  
+  <!-- Lista de NFe -->
+  <record id="importar_nfe_list" model="ir.ui.view">
+    <field name="name">importar_nfe.nfe.list</field>
+    <field name="model">importar_nfe.nfe</field>
+    <field name="arch" type="xml">
+      <list string="Notas Fiscais Eletrônicas">
+        <field name="name"/>
+        <field name="serie"/>
+        <field name="chave_acesso"/>
+        <field name="data_emissao"/>
+        <field name="emitente_id" string="Emitente"/>
+        <field name="destinatario_id" string="Destinatário"/>
+        <field name="valor_total" sum="Total"/>
+        <field name="quantidade_itens"/>
+        <field name="state"/>
+        <field name="active" invisible="1"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Formulário de NFe -->
+  <record id="importar_nfe_form" model="ir.ui.view">
+    <field name="name">importar_nfe.nfe.form</field>
+    <field name="model">importar_nfe.nfe</field>
+    <field name="arch" type="xml">
+      <form string="Nota Fiscal">
+        <header>
+          <field name="state" widget="statusbar" options="{'clickable': '1'}" 
+                 statusbar_visible="draft,imported,processed,cancelled"/>
+        </header>
+        <sheet>
+          <div class="oe_button_box" name="button_box">
+            <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+              <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+            </button>
+          </div>
+          <div class="oe_title">
+            <h1>
+              <field name="name" placeholder="Número da NFe"/>
+            </h1>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <!-- Lado esquerdo - Dados da NFe -->
+              <group>
+                <group name="group_info" string="Informações Gerais">
+                  <field name="chave_acesso"/>
+                  <field name="data_emissao"/>
+                  <field name="data_entrada"/>
+                  <field name="numero"/>
+                  <field name="serie"/>
+                  <field name="modelo"/>
+                  <field name="tipo_operacao"/>
+                </group>
+                <group name="group_partners" string="Parceiros">
+                  <field name="emitente_id" string="Emitente"/>
+                  <field name="destinatario_id" string="Destinatário"/>
+                  <field name="valor_total"/>
+                  <field name="quantidade_itens"/>
+                </group>
+              </group>
+              
+              <notebook>
+                <page string="Itens" name="items">
+                  <field name="item_ids">
+                    <list editable="bottom">
+                      <field name="numero_item"/>
+                      <field name="produto_id"/>
+                      <field name="quantidade"/>
+                      <field name="valor_unitario"/>
+                      <field name="valor_total"/>
+                      <field name="valor_desconto"/>
+                    </list>
+                  </field>
+                </page>
+                <page string="Valores" name="values">
+                  <group>
+                    <group name="group_values" string="Valores Principais">
+                      <field name="valor_produtos"/>
+                      <field name="valor_frete"/>
+                      <field name="valor_seguro"/>
+                      <field name="valor_desconto"/>
+                      <field name="valor_outros"/>
+                    </group>
+                    <group name="group_taxes" string="Impostos">
+                      <field name="valor_ipi"/>
+                      <field name="valor_icms"/>
+                      <field name="valor_pis"/>
+                      <field name="valor_cofins"/>
+                      <field name="valor_total"/>
+                    </group>
+                  </group>
+                </page>
+              </notebook>
+            </div>
+            
+            <div class="col-md-6">
+              <!-- Lado direito - XML Renderizado -->
+              <div class="xml-viewer-container" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; overflow: auto; height: 600px;">
+                <h3 class="text-center mb-2">XML Original</h3>
+                <field name="xml_formatado" widget="html"/>
+              </div>
+            </div>
+          </div>
+        </sheet>
+        <div class="oe_chatter">
+          <field name="message_follower_ids"/>
+          <field name="activity_ids"/>
+          <field name="message_ids"/>
+        </div>
+      </form>
+    </field>
+  </record>
+
+  <!-- Pesquisa de NFe -->
+  <record id="importar_nfe_search" model="ir.ui.view">
+    <field name="name">importar_nfe.nfe.search</field>
+    <field name="model">importar_nfe.nfe</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="name"/>
+        <field name="chave_acesso"/>
+        <field name="emitente_id"/>
+        <field name="destinatario_id"/>
+        <filter string="Ativos" name="active" domain="[('active','=',True)]"/>
+        <filter string="Arquivados" name="inactive" domain="[('active','=',False)]"/>
+        <separator/>
+        <filter string="Rascunho" name="draft" domain="[('state','=','draft')]"/>
+        <filter string="Importado" name="imported" domain="[('state','=','imported')]"/>
+        <filter string="Processado" name="processed" domain="[('state','=','processed')]"/>
+        <filter string="Cancelado" name="cancelled" domain="[('state','=','cancelled')]"/>
+        <group expand="0" string="Agrupar Por">
+          <filter string="Emitente" name="group_by_emitente" context="{'group_by':'emitente_id'}"/>
+          <filter string="Destinatário" name="group_by_destinatario" context="{'group_by':'destinatario_id'}"/>
+          <filter string="Status" name="group_by_state" context="{'group_by':'state'}"/>
+          <filter string="Data de Emissão" name="group_by_data_emissao" context="{'group_by':'data_emissao'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <!-- Ação para abrir a lista de NFe -->
+  <record id="importar_nfe_action" model="ir.actions.act_window">
+    <field name="name">Notas Fiscais Eletrônicas</field>
+    <field name="res_model">importar_nfe.nfe</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Importe sua primeira Nota Fiscal Eletrônica
+      </p>
+      <p>
+        Clique no botão criar para importar um arquivo XML de NFe.
+      </p>
+    </field>
+  </record>
+
+  <!-- ========================= -->
+  <!-- Emitente Views            -->
+  <!-- ========================= -->
+  
+  <record id="view_importar_nfe_emitente_list" model="ir.ui.view">
+    <field name="name">importar_nfe.emitente.list</field>
+    <field name="model">importar_nfe.emitente</field>
+    <field name="arch" type="xml">
+      <list string="Emitentes">
+        <field name="name"/>
+        <field name="cnpj"/>
+        <field name="ie"/>
+        <field name="telefone"/>
+        <field name="municipio"/>
+        <field name="uf"/>
+        <field name="active" invisible="1"/>
+      </list>
+    </field>
+  </record>
+  
+  <record id="view_importar_nfe_emitente_form" model="ir.ui.view">
+    <field name="name">importar_nfe.emitente.form</field>
+    <field name="model">importar_nfe.emitente</field>
+    <field name="arch" type="xml">
+      <form string="Emitente">
+        <sheet>
+          <div class="oe_button_box" name="button_box">
+            <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+              <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+            </button>
+          </div>
+          <div class="oe_title">
+            <h1>
+              <field name="name" placeholder="Nome do Emitente"/>
+            </h1>
+          </div>
+          <group>
+            <group string="Informações Fiscais">
+              <field name="cnpj"/>
+              <field name="ie"/>
+            </group>
+            <group string="Contato">
+              <field name="telefone"/>
+              <field name="email"/>
+            </group>
+          </group>
+          <notebook>
+            <page string="Endereço" name="address">
+              <group>
+                <group>
+                  <field name="logradouro"/>
+                  <field name="numero"/>
+                  <field name="complemento"/>
+                  <field name="bairro"/>
+                </group>
+                <group>
+                  <field name="municipio"/>
+                  <field name="uf"/>
+                  <field name="cep"/>
+                  <field name="pais"/>
+                </group>
+              </group>
+            </page>
+            <page string="Notas Fiscais" name="invoices">
+              <field name="nfe_ids" readonly="1">
+                <list>
+                  <field name="name"/>
+                  <field name="data_emissao"/>
+                  <field name="valor_total"/>
+                  <field name="state"/>
+                </list>
+              </field>
+            </page>
+          </notebook>
+        </sheet>
+        <div class="oe_chatter">
+          <field name="message_follower_ids"/>
+          <field name="activity_ids"/>
+          <field name="message_ids"/>
+        </div>
+      </form>
+    </field>
+  </record>
+  
+  <record id="view_importar_nfe_emitente_search" model="ir.ui.view">
+    <field name="name">importar_nfe.emitente.search</field>
+    <field name="model">importar_nfe.emitente</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="name"/>
+        <field name="cnpj"/>
+        <field name="municipio"/>
+        <field name="uf"/>
+        <filter string="Ativos" name="active" domain="[('active','=',True)]"/>
+        <filter string="Arquivados" name="inactive" domain="[('active','=',False)]"/>
+        <group expand="0" string="Agrupar Por">
+          <filter string="UF" name="group_by_uf" context="{'group_by':'uf'}"/>
+          <filter string="Município" name="group_by_municipio" context="{'group_by':'municipio'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  
+  <record id="action_importar_nfe_emitente" model="ir.actions.act_window">
+    <field name="name">Emitentes</field>
+    <field name="res_model">importar_nfe.emitente</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Cadastre seu primeiro Emitente
+      </p>
+      <p>
+        Os emitentes são criados automaticamente ao importar NFes.
+      </p>
+    </field>
+  </record>
+
+  <!-- ========================= -->
+  <!-- Destinatário Views        -->
+  <!-- ========================= -->
+  
+  <record id="view_importar_nfe_destinatario_list" model="ir.ui.view">
+    <field name="name">importar_nfe.destinatario.list</field>
+    <field name="model">importar_nfe.destinatario</field>
+    <field name="arch" type="xml">
+      <list string="Destinatários">
+        <field name="name"/>
+        <field name="cnpj"/>
+        <field name="cpf"/>
+        <field name="ie"/>
+        <field name="telefone"/>
+        <field name="municipio"/>
+        <field name="uf"/>
+        <field name="active" invisible="1"/>
+      </list>
+    </field>
+  </record>
+  
+  <record id="view_importar_nfe_destinatario_form" model="ir.ui.view">
+    <field name="name">importar_nfe.destinatario.form</field>
+    <field name="model">importar_nfe.destinatario</field>
+    <field name="arch" type="xml">
+      <form string="Destinatário">
+        <sheet>
+          <div class="oe_button_box" name="button_box">
+            <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+              <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+            </button>
+          </div>
+          <div class="oe_title">
+            <h1>
+              <field name="name" placeholder="Nome do Destinatário"/>
+            </h1>
+          </div>
+          <group>
+            <group string="Informações Fiscais">
+              <field name="cnpj"/>
+              <field name="cpf"/>
+              <field name="ie"/>
+            </group>
+            <group string="Contato">
+              <field name="telefone"/>
+              <field name="email"/>
+            </group>
+          </group>
+          <notebook>
+            <page string="Endereço" name="address">
+              <group>
+                <group>
+                  <field name="logradouro"/>
+                  <field name="numero"/>
+                  <field name="complemento"/>
+                  <field name="bairro"/>
+                </group>
+                <group>
+                  <field name="municipio"/>
+                  <field name="uf"/>
+                  <field name="cep"/>
+                  <field name="pais"/>
+                </group>
+              </group>
+            </page>
+            <page string="Notas Fiscais" name="invoices">
+              <field name="nfe_ids" readonly="1">
+                <list>
+                  <field name="name"/>
+                  <field name="data_emissao"/>
+                  <field name="valor_total"/>
+                  <field name="state"/>
+                </list>
+              </field>
+            </page>
+          </notebook>
+        </sheet>
+        <div class="oe_chatter">
+          <field name="message_follower_ids"/>
+          <field name="activity_ids"/>
+          <field name="message_ids"/>
+        </div>
+      </form>
+    </field>
+  </record>
+  
+  <record id="view_importar_nfe_destinatario_search" model="ir.ui.view">
+    <field name="name">importar_nfe.destinatario.search</field>
+    <field name="model">importar_nfe.destinatario</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="name"/>
+        <field name="cnpj"/>
+        <field name="cpf"/>
+        <field name="municipio"/>
+        <field name="uf"/>
+        <filter string="Ativos" name="active" domain="[('active','=',True)]"/>
+        <filter string="Arquivados" name="inactive" domain="[('active','=',False)]"/>
+        <group expand="0" string="Agrupar Por">
+          <filter string="UF" name="group_by_uf" context="{'group_by':'uf'}"/>
+          <filter string="Município" name="group_by_municipio" context="{'group_by':'municipio'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  
+  <record id="action_importar_nfe_destinatario" model="ir.actions.act_window">
+    <field name="name">Destinatários</field>
+    <field name="res_model">importar_nfe.destinatario</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Cadastre seu primeiro Destinatário
+      </p>
+      <p>
+        Os destinatários são criados automaticamente ao importar NFes.
+      </p>
+    </field>
+  </record>
+
+  <!-- ========================= -->
+  <!-- Produto Views             -->
+  <!-- ========================= -->
+  
+  <record id="view_importar_nfe_produto_list" model="ir.ui.view">
+    <field name="name">importar_nfe.produto.list</field>
+    <field name="model">importar_nfe.produto</field>
+    <field name="arch" type="xml">
+      <list string="Produtos">
+        <field name="name"/>
+        <field name="codigo"/>
+        <field name="ncm"/>
+        <field name="semantic_ncm"/>
+        <field name="cfop"/>
+        <field name="unidade"/>
+        <field name="active" invisible="1"/>
+      </list>
+    </field>
+  </record>
+  
+  <record id="view_importar_nfe_produto_form" model="ir.ui.view">
+    <field name="name">importar_nfe.produto.form</field>
+    <field name="model">importar_nfe.produto</field>
+    <field name="arch" type="xml">
+      <form string="Produto">
+        <header>
+          <button name="action_generate_embeddings" string="Gerar Informações Semânticas" type="object" 
+                  class="btn btn-primary" icon="fa-magic"/>
+          <button name="action_generate_pharmacy_description" string="Gerar Descrição Farmacêutica" type="object" 
+                  class="btn btn-info" icon="fa-medkit"/>
+          <button name="action_generate_embedding_from_semantic" 
+                  string="Gerar Embedding da Descrição" 
+                  type="object" 
+                  class="btn btn-secondary"
+                  invisible="not semantic_descr"
+                  icon="fa-refresh"/>
+        </header>
+        <sheet>
+          <div class="oe_button_box" name="button_box">
+            <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+              <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+            </button>
+          </div>
+          <div class="oe_title">
+            <h1>
+              <field name="name" placeholder="Nome do Produto"/>
+            </h1>
+            <h3 class="text-muted" invisible="not last_semantic_update">
+              <i class="fa fa-refresh"/> Última atualização semântica: <field name="last_semantic_update" readonly="1" nolabel="1"/>
+            </h3>
+          </div>
+          <notebook>
+            <page string="Informações Básicas" name="basic_info">
+              <group>
+                <group string="Identificação">
+                  <field name="codigo"/>
+                  <field name="ncm"/>
+                  <field name="cfop"/>
+                  <field name="unidade"/>
+                </group>
+                <group string="Descrição Original">
+                  <field name="descricao" nolabel="1" placeholder="Descrição original do produto..." colspan="2"/>
+                </group>
+              </group>
+            </page>
+            <page string="Informações Semânticas" name="semantic_info">
+              <div class="alert alert-info" role="alert" invisible="semantic_descr">
+                <i class="fa fa-info-circle"/> Clique no botão "Gerar Descrição Farmacêutica" no cabeçalho para criar uma descrição semântica enriquecida para este produto.
+              </div>
+              <div class="alert alert-info" role="alert" invisible="semantic_descr or ncm_vector">
+                <i class="fa fa-info-circle"/> Após gerar a descrição semântica, clique em "Gerar Embedding da Descrição" para criar o vetor de embedding.
+              </div>
+              <group>
+                <group string="NCM Semântico" invisible="not semantic_ncm">
+                  <field name="semantic_ncm" readonly="1"/>
+                  <field name="ncm_vector" filename="codigo" invisible="1"/>
+                  <field name="ncm_vector_sample" readonly="1" invisible="not ncm_vector"/>
+                  <div class="text-success" invisible="not ncm_vector">
+                    <i class="fa fa-check"/> Embedding gerado com sucesso
+                  </div>
+                  <div class="text-warning" invisible="ncm_vector">
+                    <i class="fa fa-warning"/> Embedding ainda não gerado
+                  </div>
+                </group>
+                <group string="Descrição Semântica" invisible="not semantic_descr">
+                  <field name="semantic_descr" nolabel="1" readonly="1" colspan="2" placeholder="A descrição semântica aparecerá aqui após ser gerada..."/>
+                </group>
+              </group>
+            </page>
+            <page string="Notas Fiscais" name="invoices">
+              <field name="nfe_item_ids" readonly="1">
+                <list>
+                  <field name="nfe_id"/>
+                  <field name="quantidade"/>
+                  <field name="valor_unitario"/>
+                  <field name="valor_total"/>
+                </list>
+              </field>
+            </page>
+          </notebook>
+        </sheet>
+        <div class="oe_chatter">
+          <field name="message_follower_ids"/>
+          <field name="activity_ids"/>
+          <field name="message_ids"/>
+        </div>
+      </form>
+    </field>
+  </record>
+  
+  <record id="view_importar_nfe_produto_search" model="ir.ui.view">
+    <field name="name">importar_nfe.produto.search</field>
+    <field name="model">importar_nfe.produto</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="name"/>
+        <field name="codigo"/>
+        <field name="ncm"/>
+        <field name="semantic_ncm"/>
+        <field name="semantic_descr"/>
+        <field name="cfop"/>
+        <filter string="Ativos" name="active" domain="[('active','=',True)]"/>
+        <filter string="Arquivados" name="inactive" domain="[('active','=',False)]"/>
+        <group expand="0" string="Agrupar Por">
+          <filter string="NCM" name="group_by_ncm" context="{'group_by':'ncm'}"/>
+          <filter string="CFOP" name="group_by_cfop" context="{'group_by':'cfop'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  
+  <record id="action_importar_nfe_produto" model="ir.actions.act_window">
+    <field name="name">Produtos</field>
+    <field name="res_model">importar_nfe.produto</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Cadastre seu primeiro Produto
+      </p>
+      <p>
+        Os produtos são criados automaticamente ao importar NFes.
+      </p>
+    </field>
+  </record>
+
+  <!-- ========================= -->
+  <!-- Item Views                -->
+  <!-- ========================= -->
+  
+  <record id="view_importar_nfe_item_list" model="ir.ui.view">
+    <field name="name">importar_nfe.item.list</field>
+    <field name="model">importar_nfe.item</field>
+    <field name="arch" type="xml">
+      <list string="Itens de NFe">
+        <field name="nfe_id"/>
+        <field name="numero_item"/>
+        <field name="produto_id"/>
+        <field name="quantidade"/>
+        <field name="valor_unitario"/>
+        <field name="valor_total"/>
+      </list>
+    </field>
+  </record>
+  
+  <record id="view_importar_nfe_item_form" model="ir.ui.view">
+    <field name="name">importar_nfe.item.form</field>
+    <field name="model">importar_nfe.item</field>
+    <field name="arch" type="xml">
+      <form string="Item de NFe">
+        <sheet>
+          <group>
+            <group string="Informações Básicas">
+              <field name="nfe_id"/>
+              <field name="numero_item"/>
+              <field name="produto_id"/>
+              <field name="codigo"/>
+              <field name="descricao"/>
+            </group>
+            <group string="Valores">
+              <field name="quantidade"/>
+              <field name="unidade"/>
+              <field name="valor_unitario"/>
+              <field name="valor_total"/>
+              <field name="valor_desconto"/>
+            </group>
+          </group>
+          <notebook>
+            <page string="Impostos" name="taxes">
+              <group>
+                <group>
+                  <field name="valor_icms"/>
+                  <field name="valor_ipi"/>
+                </group>
+                <group>
+                  <field name="valor_pis"/>
+                  <field name="valor_cofins"/>
+                </group>
+              </group>
+            </page>
+            <page string="Informações Fiscais" name="fiscal">
+              <group>
+                <group>
+                  <field name="ncm"/>
+                  <field name="cfop"/>
+                </group>
+              </group>
+            </page>
+          </notebook>
+        </sheet>
+        <div class="oe_chatter">
+          <field name="message_follower_ids"/>
+          <field name="activity_ids"/>
+          <field name="message_ids"/>
+        </div>
+      </form>
+    </field>
+  </record>
+  
+  <record id="view_importar_nfe_item_search" model="ir.ui.view">
+    <field name="name">importar_nfe.item.search</field>
+    <field name="model">importar_nfe.item</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="nfe_id"/>
+        <field name="produto_id"/>
+        <field name="codigo"/>
+        <field name="ncm"/>
+        <field name="cfop"/>
+        <group expand="0" string="Agrupar Por">
+          <filter string="NFe" name="group_by_nfe" context="{'group_by':'nfe_id'}"/>
+          <filter string="Produto" name="group_by_produto" context="{'group_by':'produto_id'}"/>
+          <filter string="NCM" name="group_by_ncm" context="{'group_by':'ncm'}"/>
+          <filter string="CFOP" name="group_by_cfop" context="{'group_by':'cfop'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  
+  <record id="action_importar_nfe_item" model="ir.actions.act_window">
+    <field name="name">Itens de NFe</field>
+    <field name="res_model">importar_nfe.item</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Ainda não há itens de NFe
+      </p>
+      <p>
+        Os itens são criados automaticamente ao importar NFes.
+      </p>
+    </field>
+  </record>
+
+  <!-- ========================= -->
+  <!-- Wizard Views              -->
+  <!-- ========================= -->
+  
+  <record id="view_importar_nfe_wizard_form" model="ir.ui.view">
+    <field name="name">importar_nfe.wizard.form</field>
+    <field name="model">importar_nfe.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Importar NFe">
+        <sheet>
+          <group>
+            <field name="modo_importacao" widget="radio"/>
+            
+            <group invisible="modo_importacao != 'arquivo_unico'">
+              <field name="arquivo_xml" filename="arquivo_xml_nome"/>
+              <field name="arquivo_xml_nome" invisible="1"/>
+            </group>
+            
+            <group invisible="modo_importacao != 'multiplos_arquivos'">
+              <field name="arquivos_xml" filename="arquivos_xml_nomes"/>
+              <field name="arquivos_xml_nomes" invisible="1"/>
+            </group>
+            
+            <group invisible="modo_importacao != 'pasta'">
+              <field name="pasta_path" placeholder="Digite o caminho completo da pasta"/>
+              <field name="incluir_subpastas"/>
+              <div>
+                <button name="action_selecionar_pasta" string="Selecionar Pasta" type="object" class="btn-secondary" invisible="modo_importacao != 'pasta'"/>
+              </div>
+              <div class="alert alert-info" role="alert">
+                Digite o caminho completo da pasta no campo acima ou clique no botão para selecionar a pasta que contém os arquivos XML.
+              </div>
+            </group>
+          </group>
+          
+          <group invisible="mensagem_log == False">
+            <separator string="Log de Importação" colspan="4"/>
+            <field name="total_importados" readonly="1"/>
+            <field name="total_erros" readonly="1"/>
+            <field name="mensagem_log" readonly="1" nolabel="1" colspan="4" widget="html" 
+                     style="min-height: 200px; border: 1px solid #ddd; padding: 10px;"/>
+          </group>
+        </sheet>
+        
+        <footer>
+          <button name="action_import" string="Importar" type="object" class="btn-primary"/>
+          <button string="Cancelar" class="btn-secondary" special="cancel"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+  
+  <record id="action_importar_nfe_wizard" model="ir.actions.act_window">
+    <field name="name">Importar NFe</field>
+    <field name="res_model">importar_nfe.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+
+  <!-- ========================= -->
+  <!-- Menu Structure            -->
+  <!-- ========================= -->
+  
+  <!-- Menu principal -->
+  <record id="importar_nfe_menu_root_record" model="ir.ui.menu">
+    <field name="name">Importar NFe</field>
+    <field name="web_icon">importar_nfe,static/description/icon.png</field>
+    <field name="sequence">40</field>
+  </record>
+  
+  <!-- Submenus -->
+  <record id="importar_nfe_menu_nfe_record" model="ir.ui.menu">
+    <field name="name">Notas Fiscais</field>
+    <field name="parent_id" ref="importar_nfe_menu_root_record"/>
+    <field name="action" ref="importar_nfe_action"/>
+    <field name="sequence">10</field>
+  </record>
+  
+  <record id="importar_nfe_menu_emitente_record" model="ir.ui.menu">
+    <field name="name">Emitentes</field>
+    <field name="parent_id" ref="importar_nfe_menu_root_record"/>
+    <field name="action" ref="action_importar_nfe_emitente"/>
+    <field name="sequence">20</field>
+  </record>
+  
+  <record id="importar_nfe_menu_destinatario_record" model="ir.ui.menu">
+    <field name="name">Destinatários</field>
+    <field name="parent_id" ref="importar_nfe_menu_root_record"/>
+    <field name="action" ref="action_importar_nfe_destinatario"/>
+    <field name="sequence">30</field>
+  </record>
+  
+  <record id="importar_nfe_menu_produto_record" model="ir.ui.menu">
+    <field name="name">Produtos</field>
+    <field name="parent_id" ref="importar_nfe_menu_root_record"/>
+    <field name="action" ref="action_importar_nfe_produto"/>
+    <field name="sequence">40</field>
+  </record>
+  
+  <record id="importar_nfe_menu_item_record" model="ir.ui.menu">
+    <field name="name">Itens</field>
+    <field name="parent_id" ref="importar_nfe_menu_root_record"/>
+    <field name="action" ref="action_importar_nfe_item"/>
+    <field name="sequence">50</field>
+  </record>
+  
+  <!-- Submenu de Ferramentas -->
+  <record id="importar_nfe_menu_tools_record" model="ir.ui.menu">
+    <field name="name">Ferramentas</field>
+    <field name="parent_id" ref="importar_nfe_menu_root_record"/>
+    <field name="sequence">60</field>
+  </record>
+            
+  <!-- Menu de importação -->
+  <record id="importar_nfe_menu_import_record" model="ir.ui.menu">
+    <field name="name">Importar XML</field>
+    <field name="parent_id" ref="importar_nfe_menu_tools_record"/>
+    <field name="action" ref="action_importar_nfe_wizard"/>
+    <field name="sequence">10</field>
+  </record>
+    </data>
+</odoo>

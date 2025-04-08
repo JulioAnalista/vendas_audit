@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Ação de servidor para gerar embeddings em lote -->
+        <record id="action_generate_embeddings_batch" model="ir.actions.server">
+            <field name="name">Gerar Informações Semânticas</field>
+            <field name="model_id" ref="model_importar_nfe_produto"/>
+            <field name="binding_model_id" ref="model_importar_nfe_produto"/>
+            <field name="binding_view_types">list</field>
+            <field name="state">code</field>
+            <field name="code">
+if records:
+    # Processar apenas os registros selecionados
+    processor = env['importar_nfe.semantic.processor']
+    result = processor.process_products_batch(product_ids=records.ids)
+    
+    # Atualizar a data da última atualização
+    records.write({'last_semantic_update': fields.Datetime.now()})
+    
+    # Mostrar notificação
+    action = {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+            'title': 'Processamento em Lote',
+            'message': 'Total: %s, Processados: %s, Falhas: %s' % (result['total'], result['processed'], result['failed']),
+            'sticky': False,
+            'type': 'info',
+        }
+    }
+            </field>
+        </record>
+        
+        <!-- Ação de menu para processar produtos pendentes -->
+        <record id="action_process_pending_products" model="ir.actions.server">
+            <field name="name">Processar Produtos Pendentes</field>
+            <field name="model_id" ref="model_importar_nfe_produto"/>
+            <field name="state">code</field>
+            <field name="code">
+action = model.action_generate_embeddings_batch(limit=50)
+            </field>
+        </record>
+        
+        <!-- Ação de servidor para mostrar resumo dos totais -->
+        <record id="action_show_import_summary" model="ir.actions.server">
+            <field name="name">Resumo de Importação</field>
+            <field name="model_id" ref="base.model_ir_module_module"/>
+            <field name="state">code</field>
+            <field name="code">
+# Contar registros
+nfe_count = env['importar_nfe.nfe'].search_count([])
+destinatario_count = env['importar_nfe.destinatario'].search_count([])
+produto_count = env['importar_nfe.produto'].search_count([])
+item_count = env['importar_nfe.item'].search_count([])
+
+# Criar mensagem HTML
+message = f"""
+&lt;div class="alert alert-info" role="alert"&gt;
+    &lt;h4 class="alert-heading"&gt;Resumo de Importação&lt;/h4&gt;
+    &lt;p&gt;&lt;strong&gt;Notas Fiscais:&lt;/strong&gt; {nfe_count}&lt;/p&gt;
+    &lt;p&gt;&lt;strong&gt;Destinatários:&lt;/strong&gt; {destinatario_count}&lt;/p&gt;
+    &lt;p&gt;&lt;strong&gt;Produtos:&lt;/strong&gt; {produto_count}&lt;/p&gt;
+    &lt;p&gt;&lt;strong&gt;Itens:&lt;/strong&gt; {item_count}&lt;/p&gt;
+&lt;/div&gt;
+"""
+
+# Retornar ação para mostrar mensagem em uma janela de diálogo
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Resumo de Importação',
+        'message': message,
+        'sticky': True,
+        'type': 'info',
+        'next': {'type': 'ir.actions.act_window_close'}
+    }
+}
+            </field>
+        </record>
+    </data>
+</odoo>

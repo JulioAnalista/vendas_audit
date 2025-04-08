@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <record id="module_category_importar_nfe" model="ir.module.category">
+            <field name="name">Importar NFe</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="group_importar_nfe_user" model="res.groups">
+            <field name="name">Usuário Importar NFe</field>
+            <field name="category_id" ref="module_category_importar_nfe"/>
+        </record>
+        <record id="group_importar_nfe_manager" model="res.groups">
+            <field name="name">Gerente Importar NFe</field>
+            <field name="category_id" ref="module_category_importar_nfe"/>
+        </record>
+    </data>
+</odoo>

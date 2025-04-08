@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Menu principal -->
+    <menuitem id="menu_visualizacao_vendas_root"
+        name="Vendas - Dashboard"
+        web_icon="visualizacao_vendas,static/description/icon.png"
+        sequence="10"/>
+    
+    <!-- Dashboard -->
+    <menuitem id="menu_visualizacao_vendas_dashboard"
+        name="Dashboard"
+        parent="menu_visualizacao_vendas_root"
+        action="action_dashboard"
+        sequence="10"/>
+    
+    <!-- Relatórios -->
+    <menuitem id="menu_visualizacao_vendas_relatorios"
+        name="Relatórios"
+        parent="menu_visualizacao_vendas_root"
+        sequence="20"/>
+    
+    <menuitem id="menu_visualizacao_vendas_analise"
+        name="Análise de Vendas"
+        parent="menu_visualizacao_vendas_relatorios"
+        action="action_visualizacao_vendas_analise"
+        sequence="10"/>
+    
+    <menuitem id="menu_visualizacao_vendas_produtos_analise"
+        name="Análise de Produtos"
+        parent="menu_visualizacao_vendas_relatorios"
+        action="action_visualizacao_vendas_produtos_analise"
+        sequence="20"/>
+    
+    <!-- Ação para o Dashboard -->
+    <record id="action_dashboard" model="ir.actions.act_url">
+        <field name="name">Dashboard de Vendas</field>
+        <field name="url">/visualizacao_vendas/dashboard</field>
+        <field name="target">self</field>
+    </record>
+</odoo> 

@@ -1,0 +1,76 @@
+/* Estilos para o Dashboard de Vendas */
+
+.o_dashboard_vendas {
+    padding: 1rem 0;
+}
+
+.o_dashboard_vendas .card {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.3s ease;
+}
+
+.o_dashboard_vendas .card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.o_dashboard_vendas .card-header {
+    background-color: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-weight: 600;
+}
+
+.o_dashboard_vendas .shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.o_dashboard_vendas .display-4 {
+    font-size: 2.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    color: #4c4c4c;
+}
+
+.o_dashboard_vendas canvas {
+    max-width: 100%;
+}
+
+.o_dashboard_vendas .btn-outline-primary {
+    color: #00a09d;
+    border-color: #00a09d;
+}
+
+.o_dashboard_vendas .btn-outline-primary:hover,
+.o_dashboard_vendas .btn-outline-primary.active {
+    color: white;
+    background-color: #00a09d;
+    border-color: #00a09d;
+}
+
+.o_dashboard_vendas .btn-primary {
+    color: white;
+    background-color: #00a09d;
+    border-color: #00a09d;
+}
+
+.o_dashboard_vendas .btn-primary:hover {
+    background-color: #008784;
+    border-color: #008784;
+}
+
+.o_dashboard_vendas .text-right {
+    text-align: right !important;
+}
+
+@media print {
+    .o_dashboard_vendas .card {
+        break-inside: avoid;
+    }
+    
+    .o_dashboard_vendas .btn,
+    .o_dashboard_vendas .list-group-item {
+        display: none;
+    }
+} 

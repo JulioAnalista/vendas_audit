@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Item de menu para processar produtos pendentes -->
+        <record id="menu_process_pending_products_record" model="ir.ui.menu">
+            <field name="name">Processar Produtos Pendentes</field>
+            <field name="parent_id" ref="importar_nfe_menu_tools_record"/>
+            <field name="action" ref="action_process_pending_products"/>
+            <field name="sequence">20</field>
+        </record>
+                  
+        <!-- Item de menu para mostrar resumo -->
+        <record id="menu_show_import_summary_record" model="ir.ui.menu">
+            <field name="name">Resumo de Importação</field>
+            <field name="parent_id" ref="importar_nfe_menu_tools_record"/>
+            <field name="action" ref="action_show_import_summary"/>
+            <field name="sequence">10</field>
+        </record>
+    </data>
+</odoo>

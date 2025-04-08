@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Árvore de Análise de Vendas -->
+    <record id="visualizacao_vendas_analise_view_tree" model="ir.ui.view">
+        <field name="name">visualizacao_vendas.analise.tree</field>
+        <field name="model">visualizacao_vendas.analise</field>
+        <field name="arch" type="xml">
+            <tree string="Análise de Vendas" create="false" edit="false" delete="false">
+                <field name="name"/>
+                <field name="data_emissao_dia"/>
+                <field name="data_emissao_mes"/>
+                <field name="data_emissao_ano"/>
+                <field name="quantidade_nfe"/>
+                <field name="valor_produtos" sum="Total Produtos"/>
+                <field name="valor_frete" sum="Total Frete"/>
+                <field name="valor_total" sum="Total"/>
+                <field name="emitente_id"/>
+                <field name="destinatario_id"/>
+                <button name="action_ver_detalhes" string="Ver Detalhes" type="object" icon="fa-search"/>
+                <button name="action_ver_periodo" string="Ver Período" type="object" icon="fa-calendar"/>
+            </tree>
+        </field>
+    </record>
+    
+    <!-- Pesquisa de Análise de Vendas -->
+    <record id="visualizacao_vendas_analise_view_search" model="ir.ui.view">
+        <field name="name">visualizacao_vendas.analise.search</field>
+        <field name="model">visualizacao_vendas.analise</field>
+        <field name="arch" type="xml">
+            <search string="Pesquisar Vendas">
+                <field name="name"/>
+                <field name="data_emissao_dia"/>
+                <field name="data_emissao_mes"/>
+                <field name="data_emissao_ano"/>
+                <field name="emitente_id"/>
+                <field name="destinatario_id"/>
+                <filter string="Este Mês" name="este_mes" domain="[('data_emissao_mes', '=', (context_today().strftime('%m/%Y')))]"/>
+                <filter string="Este Ano" name="este_ano" domain="[('data_emissao_ano', '=', (context_today().strftime('%Y')))]"/>
+                <group expand="0" string="Agrupar Por">
+                    <filter string="Dia" name="dia" context="{'group_by': 'data_emissao_dia'}"/>
+                    <filter string="Mês" name="mes" context="{'group_by': 'data_emissao_mes'}"/>
+                    <filter string="Ano" name="ano" context="{'group_by': 'data_emissao_ano'}"/>
+                    <filter string="Emitente" name="emitente" context="{'group_by': 'emitente_id'}"/>
+                    <filter string="Destinatário" name="destinatario" context="{'group_by': 'destinatario_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    
+    <!-- Gráfico de Análise de Vendas -->
+    <record id="visualizacao_vendas_analise_view_graph" model="ir.ui.view">
+        <field name="name">visualizacao_vendas.analise.graph</field>
+        <field name="model">visualizacao_vendas.analise</field>
+        <field name="arch" type="xml">
+            <graph string="Análise de Vendas" type="bar" stacked="True">
+                <field name="data_emissao_mes" type="row"/>
+                <field name="quantidade_nfe" type="measure"/>
+                <field name="valor_total" type="measure"/>
+            </graph>
+        </field>
+    </record>
+    
+    <!-- Pivot de Análise de Vendas -->
+    <record id="visualizacao_vendas_analise_view_pivot" model="ir.ui.view">
+        <field name="name">visualizacao_vendas.analise.pivot</field>
+        <field name="model">visualizacao_vendas.analise</field>
+        <field name="arch" type="xml">
+            <pivot string="Análise de Vendas" display_quantity="true">
+                <field name="data_emissao_mes" type="row"/>
+                <field name="emitente_id" type="col"/>
+                <field name="quantidade_nfe" type="measure"/>
+                <field name="valor_total" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    
+    <!-- Árvore de Análise de Produtos -->
+    <record id="visualizacao_vendas_produtos_analise_view_tree" model="ir.ui.view">
+        <field name="name">visualizacao_vendas.produtos_analise.tree</field>
+        <field name="model">visualizacao_vendas.produtos_analise</field>
+        <field name="arch" type="xml">
+            <tree string="Análise de Produtos Vendidos" create="false" edit="false" delete="false">
+                <field name="name"/>
+                <field name="codigo"/>
+                <field name="ncm"/>
+                <field name="unidade"/>
+                <field name="quantidade_vendida" sum="Total Quantidade"/>
+                <field name="valor_unitario_medio" avg="Média Unitário"/>
+                <field name="valor_total" sum="Total Valor"/>
+                <field name="data_emissao_dia"/>
+                <field name="data_emissao_mes"/>
+                <field name="data_emissao_ano"/>
+                <field name="emitente_id"/>
+                <button name="action_ver_produto" string="Ver Produto" type="object" icon="fa-search"/>
+                <button name="action_ver_vendas_produto" string="Ver Vendas" type="object" icon="fa-shopping-cart"/>
+            </tree>
+        </field>
+    </record>
+    
+    <!-- Pesquisa de Análise de Produtos -->
+    <record id="visualizacao_vendas_produtos_analise_view_search" model="ir.ui.view">
+        <field name="name">visualizacao_vendas.produtos_analise.search</field>
+        <field name="model">visualizacao_vendas.produtos_analise</field>
+        <field name="arch" type="xml">
+            <search string="Pesquisar Produtos Vendidos">
+                <field name="name"/>
+                <field name="codigo"/>
+                <field name="ncm"/>
+                <field name="unidade"/>
+                <field name="data_emissao_dia"/>
+                <field name="data_emissao_mes"/>
+                <field name="data_emissao_ano"/>
+                <field name="emitente_id"/>
+                <filter string="Este Mês" name="este_mes" domain="[('data_emissao_mes', '=', (context_today().strftime('%m/%Y')))]"/>
+                <filter string="Este Ano" name="este_ano" domain="[('data_emissao_ano', '=', (context_today().strftime('%Y')))]"/>
+                <group expand="0" string="Agrupar Por">
+                    <filter string="Produto" name="produto" context="{'group_by': 'name'}"/>
+                    <filter string="NCM" name="ncm" context="{'group_by': 'ncm'}"/>
+                    <filter string="Dia" name="dia" context="{'group_by': 'data_emissao_dia'}"/>
+                    <filter string="Mês" name="mes" context="{'group_by': 'data_emissao_mes'}"/>
+                    <filter string="Ano" name="ano" context="{'group_by': 'data_emissao_ano'}"/>
+                    <filter string="Emitente" name="emitente" context="{'group_by': 'emitente_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    
+    <!-- Gráfico de Análise de Produtos -->
+    <record id="visualizacao_vendas_produtos_analise_view_graph" model="ir.ui.view">
+        <field name="name">visualizacao_vendas.produtos_analise.graph</field>
+        <field name="model">visualizacao_vendas.produtos_analise</field>
+        <field name="arch" type="xml">
+            <graph string="Produtos Vendidos" type="pie">
+                <field name="name"/>
+                <field name="quantidade_vendida" type="measure"/>
+            </graph>
+        </field>
+    </record>
+    
+    <!-- Pivot de Análise de Produtos -->
+    <record id="visualizacao_vendas_produtos_analise_view_pivot" model="ir.ui.view">
+        <field name="name">visualizacao_vendas.produtos_analise.pivot</field>
+        <field name="model">visualizacao_vendas.produtos_analise</field>
+        <field name="arch" type="xml">
+            <pivot string="Análise de Produtos" display_quantity="true">
+                <field name="name" type="row"/>
+                <field name="data_emissao_mes" type="col"/>
+                <field name="quantidade_vendida" type="measure"/>
+                <field name="valor_total" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    
+    <!-- Ações -->
+    <record id="action_visualizacao_vendas_analise" model="ir.actions.act_window">
+        <field name="name">Análise de Vendas</field>
+        <field name="res_model">visualizacao_vendas.analise</field>
+        <field name="view_mode">tree,graph,pivot</field>
+        <field name="context">{'search_default_este_ano': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aqui você pode analisar suas vendas de acordo com diferentes critérios.
+            </p>
+            <p>
+                Use os filtros e agrupamentos para personalizar sua análise.
+            </p>
+        </field>
+    </record>
+    
+    <record id="action_visualizacao_vendas_produtos_analise" model="ir.actions.act_window">
+        <field name="name">Análise de Produtos Vendidos</field>
+        <field name="res_model">visualizacao_vendas.produtos_analise</field>
+        <field name="view_mode">tree,graph,pivot</field>
+        <field name="context">{'search_default_este_ano': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aqui você pode analisar os produtos vendidos de acordo com diferentes critérios.
+            </p>
+            <p>
+                Use os filtros e agrupamentos para personalizar sua análise.
+            </p>
+        </field>
+    </record>
+</odoo> 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="importar_nfe.pasta_widget">
+        <div class="o_field_pasta">
+            <input type="text" class="o_input" t-att-value="value" readonly="readonly"/>
+            <button type="button" class="btn btn-secondary o_pasta_button">
+                <i class="fa fa-folder-open"/> Selecionar Pasta
+            </button>
+        </div>
+    </t>
+</templates> 

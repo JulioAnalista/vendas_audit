@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template para o Dashboard -->
+    <template id="dashboard_view" name="Dashboard de Vendas">
+        <t t-call="web.layout">
+            <t t-set="head">
+                <t t-call-assets="web.assets_common" t-js="false"/>
+                <t t-call-assets="web.assets_backend" t-js="false"/>
+                <t t-call-assets="web.assets_common" t-css="false"/>
+                <t t-call-assets="web.assets_backend" t-css="false"/>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css"/>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+            </t>
+            <t t-set="body_classname" t-value="'o_web_client'"/>
+            <div class="o_main_content">
+                <div class="o_content">
+                    <div class="o_dashboard_vendas">
+                        <div class="container-fluid mt-3">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h1 class="mb-0">Dashboard de Vendas</h1>
+                                    <p class="text-muted">Visualização de vendas e produtos vendidos por período</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Filtros -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body py-3">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">Filtros</h5>
+                                                <div>
+                                                    <div class="btn-group" role="group" aria-label="Período">
+                                                        <button type="button" class="btn btn-outline-primary periodo-btn" data-periodo="semana">Última Semana</button>
+                                                        <button type="button" class="btn btn-outline-primary periodo-btn active" data-periodo="mes">Último Mês</button>
+                                                        <button type="button" class="btn btn-outline-primary periodo-btn" data-periodo="trimestre">Último Trimestre</button>
+                                                        <button type="button" class="btn btn-outline-primary periodo-btn" data-periodo="ano">Último Ano</button>
+                                                    </div>
+                                                    <button id="btnAtualizar" class="btn btn-primary ml-2">
+                                                        <i class="fa fa-refresh"></i> Atualizar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Indicadores -->
+                            <div class="row mb-4" id="indicadores">
+                                <div class="col-md-3">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body text-center">
+                                            <div class="display-4 font-weight-bold" id="total-nfes">0</div>
+                                            <div class="text-muted">Total de Notas Fiscais</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body text-center">
+                                            <div class="display-4 font-weight-bold" id="total-valor">R$ 0,00</div>
+                                            <div class="text-muted">Valor Total</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body text-center">
+                                            <div class="display-4 font-weight-bold" id="ticket-medio">R$ 0,00</div>
+                                            <div class="text-muted">Ticket Médio</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body text-center">
+                                            <div class="display-4 font-weight-bold" id="total-produtos">0</div>
+                                            <div class="text-muted">Produtos Vendidos</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Gráficos -->
+                            <div class="row mb-4">
+                                <div class="col-md-8">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header">
+                                            <h5 class="card-title mb-0">Evolução de Vendas</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="chart-vendas" height="300"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header">
+                                            <h5 class="card-title mb-0">Produtos Mais Vendidos</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="chart-produtos" height="300"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tabela de Produtos -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header">
+                                            <h5 class="card-title mb-0">Produtos Mais Vendidos</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover" id="tabela-produtos">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Código</th>
+                                                            <th>Produto</th>
+                                                            <th class="text-right">Quantidade</th>
+                                                            <th class="text-right">Valor Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- Dados serão preenchidos via JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Links para relatórios -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body">
+                                            <h5>Relatórios Detalhados</h5>
+                                            <div class="list-group">
+                                                <a href="/web#action=visualizacao_vendas.action_visualizacao_vendas_analise" class="list-group-item list-group-item-action">
+                                                    <i class="fa fa-bar-chart"></i> Análise de Vendas
+                                                </a>
+                                                <a href="/web#action=visualizacao_vendas.action_visualizacao_vendas_produtos_analise" class="list-group-item list-group-item-action">
+                                                    <i class="fa fa-shopping-cart"></i> Análise de Produtos Vendidos
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body">
+                                            <h5>Exportar Dados</h5>
+                                            <div class="btn-group mt-2" role="group">
+                                                <button type="button" class="btn btn-outline-primary" id="btn-exportar-csv">
+                                                    <i class="fa fa-file-csv"></i> Exportar CSV
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary" id="btn-exportar-pdf">
+                                                    <i class="fa fa-file-pdf"></i> Exportar PDF
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary" id="btn-imprimir">
+                                                    <i class="fa fa-print"></i> Imprimir
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Variáveis para armazenar os gráficos
+                    let chartVendas = null;
+                    let chartProdutos = null;
+                    
+                    // Funções para formatar números
+                    function formatarMoeda(valor) {
+                        return new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(valor);
+                    }
+                    
+                    function formatarNumero(valor) {
+                        return new Intl.NumberFormat('pt-BR').format(valor);
+                    }
+                    
+                    // Função para atualizar o dashboard
+                    async function atualizarDashboard() {
+                        // Obter período selecionado
+                        const periodoAtivo = document.querySelector('.periodo-btn.active').dataset.periodo;
+                        
+                        try {
+                            // Obter dados de vendas
+                            const resDados = await fetch('/visualizacao_vendas/dados_dashboard', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    jsonrpc: "2.0",
+                                    method: "call",
+                                    params: {
+                                        periodo: periodoAtivo
+                                    },
+                                    id: new Date().getTime()
+                                })
+                            });
+                            
+                            const dadosJson = await resDados.json();
+                            if (dadosJson.error) {
+                                console.error('Erro ao obter dados:', dadosJson.error);
+                                return;
+                            }
+                            
+                            const dados = dadosJson.result.data;
+                            
+                            // Atualizar indicadores
+                            document.getElementById('total-nfes').textContent = formatarNumero(dados.total_nfes);
+                            document.getElementById('total-valor').textContent = formatarMoeda(dados.total_valor);
+                            
+                            const ticketMedio = dados.total_nfes > 0 ? dados.total_valor / dados.total_nfes : 0;
+                            document.getElementById('ticket-medio').textContent = formatarMoeda(ticketMedio);
+                            
+                            // Preparar dados para o gráfico de vendas
+                            const vendasPorDia = dados.vendas_por_dia;
+                            const datas = Object.keys(vendasPorDia).sort();
+                            const quantidades = datas.map(data => vendasPorDia[data].quantidade);
+                            const valores = datas.map(data => vendasPorDia[data].valor);
+                            
+                            // Criar ou atualizar gráfico de vendas
+                            const ctxVendas = document.getElementById('chart-vendas').getContext('2d');
+                            if (chartVendas) {
+                                chartVendas.data.labels = datas;
+                                chartVendas.data.datasets[0].data = quantidades;
+                                chartVendas.data.datasets[1].data = valores;
+                                chartVendas.update();
+                            } else {
+                                chartVendas = new Chart(ctxVendas, {
+                                    type: 'line',
+                                    data: {
+                                        labels: datas,
+                                        datasets: [
+                                            {
+                                                label: 'Quantidade de NFes',
+                                                data: quantidades,
+                                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                                borderColor: 'rgba(75, 192, 192, 1)',
+                                                borderWidth: 2,
+                                                yAxisID: 'y1'
+                                            },
+                                            {
+                                                label: 'Valor Total (R$)',
+                                                data: valores,
+                                                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                                                borderColor: 'rgba(153, 102, 255, 1)',
+                                                borderWidth: 2,
+                                                yAxisID: 'y2'
+                                            }
+                                        ]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        scales: {
+                                            y1: {
+                                                type: 'linear',
+                                                display: true,
+                                                position: 'left',
+                                                title: {
+                                                    display: true,
+                                                    text: 'Quantidade'
+                                                }
+                                            },
+                                            y2: {
+                                                type: 'linear',
+                                                display: true,
+                                                position: 'right',
+                                                title: {
+                                                    display: true,
+                                                    text: 'Valor (R$)'
+                                                },
+                                                grid: {
+                                                    drawOnChartArea: false
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            // Obter dados de produtos
+                            const resProdutos = await fetch('/visualizacao_vendas/produtos_mais_vendidos', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    jsonrpc: "2.0",
+                                    method: "call",
+                                    params: {
+                                        periodo: periodoAtivo,
+                                        limite: 10
+                                    },
+                                    id: new Date().getTime()
+                                })
+                            });
+                            
+                            const produtosJson = await resProdutos.json();
+                            if (produtosJson.error) {
+                                console.error('Erro ao obter produtos:', produtosJson.error);
+                                return;
+                            }
+                            
+                            const dadosProdutos = produtosJson.result.data;
+                            const produtos = dadosProdutos.produtos;
+                            
+                            // Atualizar indicador de total de produtos
+                            const totalProdutos = produtos.reduce((total, produto) => total + produto.quantidade, 0);
+                            document.getElementById('total-produtos').textContent = formatarNumero(totalProdutos);
+                            
+                            // Preparar dados para o gráfico de produtos
+                            const nomesProdutos = produtos.slice(0, 5).map(p => p.nome);
+                            const quantidadesProdutos = produtos.slice(0, 5).map(p => p.quantidade);
+                            
+                            // Criar ou atualizar gráfico de produtos
+                            const ctxProdutos = document.getElementById('chart-produtos').getContext('2d');
+                            if (chartProdutos) {
+                                chartProdutos.data.labels = nomesProdutos;
+                                chartProdutos.data.datasets[0].data = quantidadesProdutos;
+                                chartProdutos.update();
+                            } else {
+                                chartProdutos = new Chart(ctxProdutos, {
+                                    type: 'doughnut',
+                                    data: {
+                                        labels: nomesProdutos,
+                                        datasets: [{
+                                            data: quantidadesProdutos,
+                                            backgroundColor: [
+                                                'rgba(255, 99, 132, 0.8)',
+                                                'rgba(54, 162, 235, 0.8)',
+                                                'rgba(255, 206, 86, 0.8)',
+                                                'rgba(75, 192, 192, 0.8)',
+                                                'rgba(153, 102, 255, 0.8)'
+                                            ],
+                                            borderWidth: 1
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        plugins: {
+                                            legend: {
+                                                position: 'right',
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            // Atualizar tabela de produtos
+                            const tbody = document.querySelector('#tabela-produtos tbody');
+                            tbody.innerHTML = '';
+                            
+                            produtos.forEach(produto => {
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td>${produto.codigo}</td>
+                                    <td>${produto.nome}</td>
+                                    <td class="text-right">${formatarNumero(produto.quantidade)}</td>
+                                    <td class="text-right">${formatarMoeda(produto.valor_total)}</td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                            
+                        } catch (error) {
+                            console.error('Erro:', error);
+                        }
+                    }
+                    
+                    // Event listeners
+                    document.querySelectorAll('.periodo-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
+                            this.classList.add('active');
+                            atualizarDashboard();
+                        });
+                    });
+                    
+                    document.getElementById('btnAtualizar').addEventListener('click', atualizarDashboard);
+                    
+                    // Exportar CSV
+                    document.getElementById('btn-exportar-csv').addEventListener('click', function() {
+                        alert('Exportação de CSV será implementada');
+                    });
+                    
+                    // Exportar PDF
+                    document.getElementById('btn-exportar-pdf').addEventListener('click', function() {
+                        alert('Exportação de PDF será implementada');
+                    });
+                    
+                    // Imprimir
+                    document.getElementById('btn-imprimir').addEventListener('click', function() {
+                        window.print();
+                    });
+                    
+                    // Inicializar o dashboard
+                    atualizarDashboard();
+                });
+            </script>
+        </t>
+    </template>
+</odoo> 

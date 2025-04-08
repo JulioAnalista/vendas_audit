@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Vendas</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- CSS customizado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Cabeçalho -->
+        <header class="mb-4">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="#">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Dashboard de Vendas
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#vendas">Vendas</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#produtos">Produtos</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </header>
+        
+        <!-- Filtros -->
+        <section class="mb-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Filtros</h5>
+                        <div class="d-flex">
+                            <div class="btn-group me-2" role="group" aria-label="Período">
+                                <button type="button" class="btn btn-outline-primary periodo-btn" data-periodo="semana">Semana</button>
+                                <button type="button" class="btn btn-outline-primary periodo-btn active" data-periodo="mes">Mês</button>
+                                <button type="button" class="btn btn-outline-primary periodo-btn" data-periodo="trimestre">Trimestre</button>
+                                <button type="button" class="btn btn-outline-primary periodo-btn" data-periodo="ano">Ano</button>
+                            </div>
+                            <button id="btnAtualizar" class="btn btn-primary">
+                                <i class="fas fa-sync-alt"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Indicadores -->
+        <section class="mb-4" id="indicadores">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card shadow h-100">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Total de Notas Fiscais</h6>
+                            <div class="display-4 fw-bold" id="total-nfes">0</div>
+                            <div class="text-success mt-2" id="variacao-nfes">
+                                <i class="fas fa-arrow-up"></i> 0%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card shadow h-100">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Valor Total</h6>
+                            <div class="display-4 fw-bold" id="total-valor">R$ 0,00</div>
+                            <div class="text-success mt-2" id="variacao-valor">
+                                <i class="fas fa-arrow-up"></i> 0%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card shadow h-100">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Ticket Médio</h6>
+                            <div class="display-4 fw-bold" id="ticket-medio">R$ 0,00</div>
+                            <div class="text-success mt-2" id="variacao-ticket">
+                                <i class="fas fa-arrow-up"></i> 0%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card shadow h-100">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Total de Produtos</h6>
+                            <div class="display-4 fw-bold" id="total-produtos">0</div>
+                            <div class="text-success mt-2" id="variacao-produtos">
+                                <i class="fas fa-arrow-up"></i> 0%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Gráficos -->
+        <section class="mb-4" id="vendas">
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <div class="card shadow h-100">
+                        <div class="card-header">
+                            <h5 class="card-title">Evolução de Vendas</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="chart-vendas" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow h-100">
+                        <div class="card-header">
+                            <h5 class="card-title">Vendas por NCM</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="chart-ncm" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Produtos -->
+        <section class="mb-4" id="produtos">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="card-title">Produtos Mais Vendidos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="tabela-produtos">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Produto</th>
+                                    <th class="text-end">Quantidade</th>
+                                    <th class="text-end">Valor Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Será preenchido via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Resumo Mensal -->
+        <section class="mb-4">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="card-title">Resumo Mensal</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chart-mensal" height="100"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Rodapé -->
+        <footer class="mt-5 mb-3 text-center text-muted">
+            <p>Dashboard de Vendas &copy; 2023 - Análise de Vendas e Produtos</p>
+        </footer>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JavaScript customizado -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html> 
