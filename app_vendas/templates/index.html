@@ -48,14 +48,69 @@
         <section class="mb-4">
             <div class="card shadow">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Filtros</h5>
-                        <div class="d-flex">
-                            <div class="btn-group me-2" role="group" aria-label="Período">
-                                <button type="button" class="btn btn-outline-primary periodo-btn" data-periodo="semana">Semana</button>
-                                <button type="button" class="btn btn-outline-primary periodo-btn active" data-periodo="mes">Mês</button>
-                                <button type="button" class="btn btn-outline-primary periodo-btn" data-periodo="trimestre">Trimestre</button>
-                                <button type="button" class="btn btn-outline-primary periodo-btn" data-periodo="ano">Ano</button>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="card-title mb-3">Filtros</h5>
+                            <div class="d-flex flex-wrap gap-3">
+                                <div class="btn-group" role="group" aria-label="Tipo de Período">
+                                    <button type="button" class="btn btn-outline-primary periodo-tipo-btn active" data-tipo="semana">Semana</button>
+                                    <button type="button" class="btn btn-outline-primary periodo-tipo-btn" data-tipo="mes">Mês</button>
+                                    <button type="button" class="btn btn-outline-primary periodo-tipo-btn" data-tipo="trimestre">Trimestre</button>
+                                    <button type="button" class="btn btn-outline-primary periodo-tipo-btn" data-tipo="ano">Ano</button>
+                                </div>
+                                
+                                <!-- Seletor de Ano -->
+                                <div class="form-group periodo-seletor" id="seletor-ano">
+                                    <select id="ano-select" class="form-select">
+                                        <!-- Opções serão preenchidas via JavaScript -->
+                                    </select>
+                                </div>
+                                
+                                <!-- Seletor de Mês (visível para mês e trimestre) -->
+                                <div class="form-group periodo-seletor" id="seletor-mes" style="display: none;">
+                                    <select id="mes-select" class="form-select">
+                                        <option value="1">Janeiro</option>
+                                        <option value="2">Fevereiro</option>
+                                        <option value="3">Março</option>
+                                        <option value="4">Abril</option>
+                                        <option value="5">Maio</option>
+                                        <option value="6">Junho</option>
+                                        <option value="7">Julho</option>
+                                        <option value="8">Agosto</option>
+                                        <option value="9">Setembro</option>
+                                        <option value="10">Outubro</option>
+                                        <option value="11">Novembro</option>
+                                        <option value="12">Dezembro</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Seletor de Trimestre -->
+                                <div class="form-group periodo-seletor" id="seletor-trimestre" style="display: none;">
+                                    <select id="trimestre-select" class="form-select">
+                                        <option value="1">1º Trimestre (Jan-Mar)</option>
+                                        <option value="2">2º Trimestre (Abr-Jun)</option>
+                                        <option value="3">3º Trimestre (Jul-Set)</option>
+                                        <option value="4">4º Trimestre (Out-Dez)</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Seletor de Semana -->
+                                <div class="form-group periodo-seletor" id="seletor-semana" style="display: none;">
+                                    <input type="date" id="semana-input" class="form-control">
+                                </div>
+                                
+                                <button id="btnAplicarFiltro" class="btn btn-primary">
+                                    <i class="fas fa-filter"></i> Aplicar Filtro
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center justify-content-end">
+                            <div class="btn-group btn-group-sm me-3" role="group" aria-label="Período Rápido">
+                                <button type="button" class="btn btn-outline-secondary periodo-rapido-btn" data-periodo="7">Últimos 7 dias</button>
+                                <button type="button" class="btn btn-outline-secondary periodo-rapido-btn" data-periodo="30">Últimos 30 dias</button>
+                                <button type="button" class="btn btn-outline-secondary periodo-rapido-btn" data-periodo="90">Últimos 90 dias</button>
+                                <button type="button" class="btn btn-outline-secondary periodo-rapido-btn" data-periodo="180">Últimos 180 dias</button>
+                                <button type="button" class="btn btn-outline-secondary periodo-rapido-btn" data-periodo="365">Último ano</button>
                             </div>
                             <button id="btnAtualizar" class="btn btn-primary">
                                 <i class="fas fa-sync-alt"></i> Atualizar

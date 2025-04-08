@@ -7,7 +7,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let chartMensal = null;
     
     // Período atual selecionado
-    let periodoAtual = 'mes';
+    let filtroTipo = 'semana';
+    let filtroAno = new Date().getFullYear();
+    let filtroMes = new Date().getMonth() + 1;
+    let filtroTrimestre = Math.floor((new Date().getMonth() / 3) + 1);
+    let filtroSemana = new Date().toISOString().slice(0, 10);
+    let filtroDias = 7; // Padrão para últimos 7 dias
     
     // Dados para comparação
     let dadosAnteriores = {
@@ -69,6 +74,79 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // ----- Funções de Gerenciamento de Filtros -----
+    
+    // Inicializar os seletores de período
+    function inicializarSeletoresPeriodo() {
+        // Preencher o seletor de anos (últimos 5 anos)
+        const anoAtual = new Date().getFullYear();
+        const seletorAno = document.getElementById('ano-select');
+        seletorAno.innerHTML = '';
+        
+        for (let i = 0; i < 5; i++) {
+            const ano = anoAtual - i;
+            const option = document.createElement('option');
+            option.value = ano;
+            option.textContent = ano;
+            seletorAno.appendChild(option);
+        }
+        
+        // Configurar estado inicial dos seletores
+        document.getElementById('mes-select').value = filtroMes;
+        document.getElementById('trimestre-select').value = filtroTrimestre;
+        document.getElementById('semana-input').value = filtroSemana;
+        
+        // Mostrar seletores apropriados para o tipo de filtro atual
+        atualizarVisibilidadeSeletores();
+    }
+    
+    // Atualiza quais seletores estão visíveis baseado no tipo de filtro
+    function atualizarVisibilidadeSeletores() {
+        const seletores = document.querySelectorAll('.periodo-seletor');
+        seletores.forEach(seletor => seletor.style.display = 'none');
+        
+        document.getElementById('seletor-ano').style.display = 'block';
+        
+        if (filtroTipo === 'mes') {
+            document.getElementById('seletor-mes').style.display = 'block';
+        } 
+        else if (filtroTipo === 'trimestre') {
+            document.getElementById('seletor-trimestre').style.display = 'block';
+        }
+        else if (filtroTipo === 'semana') {
+            document.getElementById('seletor-semana').style.display = 'block';
+        }
+    }
+    
+    // Constrói os parâmetros de filtro para as requisições
+    function construirParametrosFiltro() {
+        let params = new URLSearchParams();
+        
+        params.append('tipo_filtro', filtroTipo);
+        
+        switch (filtroTipo) {
+            case 'ano':
+                params.append('ano', filtroAno);
+                break;
+            case 'trimestre':
+                params.append('ano', filtroAno);
+                params.append('trimestre', filtroTrimestre);
+                break;
+            case 'mes':
+                params.append('ano', filtroAno);
+                params.append('mes', filtroMes);
+                break;
+            case 'semana':
+                params.append('data', filtroSemana);
+                break;
+            case 'ultimos_dias':
+                params.append('dias', filtroDias);
+                break;
+        }
+        
+        return params.toString();
+    }
+    
     // ----- Funções de Carregamento de Dados -----
     
     // Carrega dados do dashboard
@@ -87,9 +165,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!isNaN(ticketMedioAtual)) dadosAnteriores.ticket_medio = ticketMedioAtual;
             if (!isNaN(totalProdutosAtual)) dadosAnteriores.total_produtos = totalProdutosAtual;
             
+            // Construir parâmetros de filtro
+            const params = construirParametrosFiltro();
+            console.log(`Parâmetros de filtro: ${params}`);
+            
             // Buscar novos dados
-            console.log(`Solicitando dados do dashboard para o período: ${periodoAtual}`);
-            const resposta = await fetch(`/api/vendas/dashboard?periodo=${periodoAtual}`);
+            console.log(`Solicitando dados do dashboard...`);
+            const resposta = await fetch(`/api/vendas/dashboard?${params}`);
             if (!resposta.ok) {
                 console.error(`Erro HTTP: ${resposta.status} ${resposta.statusText}`);
                 throw new Error('Falha ao carregar dados do dashboard');
@@ -109,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Buscar dados de produtos mais vendidos
             console.log("Solicitando dados de produtos mais vendidos...");
-            const respostaProdutos = await fetch(`/api/produtos/mais-vendidos?periodo=${periodoAtual}&limite=10`);
+            const respostaProdutos = await fetch(`/api/produtos/mais-vendidos?${params}&limite=10`);
             if (!respostaProdutos.ok) {
                 console.error(`Erro HTTP (produtos): ${respostaProdutos.status} ${respostaProdutos.statusText}`);
                 throw new Error('Falha ao carregar dados de produtos');
@@ -130,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Buscar dados por NCM
             console.log("Solicitando dados por NCM...");
-            const respostaNCM = await fetch(`/api/produtos/por-categoria?periodo=${periodoAtual}`);
+            const respostaNCM = await fetch(`/api/produtos/por-categoria?${params}`);
             if (!respostaNCM.ok) {
                 console.error(`Erro HTTP (NCM): ${respostaNCM.status} ${respostaNCM.statusText}`);
                 throw new Error('Falha ao carregar dados por NCM');
@@ -140,10 +222,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("Dados de NCM recebidos:", dadosNCM);
             atualizarGraficoNCM(dadosNCM.produtos);
             
-            // Buscar dados mensais para o ano atual
+            // Buscar dados mensais para o ano selecionado
             console.log("Solicitando dados mensais...");
-            const anoAtual = new Date().getFullYear();
-            const respostaMensal = await fetch(`/api/vendas/por-periodo?ano=${anoAtual}`);
+            const respostaMensal = await fetch(`/api/vendas/por-periodo?ano=${filtroAno}`);
             if (!respostaMensal.ok) {
                 console.error(`Erro HTTP (mensal): ${respostaMensal.status} ${respostaMensal.statusText}`);
                 throw new Error('Falha ao carregar dados mensais');
@@ -444,14 +525,58 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ----- Event Listeners -----
     
-    // Alternar entre períodos
-    document.querySelectorAll('.periodo-btn').forEach(btn => {
+    // Alternar entre tipos de período
+    document.querySelectorAll('.periodo-tipo-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.periodo-tipo-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            periodoAtual = this.dataset.periodo;
+            
+            filtroTipo = this.dataset.tipo;
+            atualizarVisibilidadeSeletores();
+        });
+    });
+    
+    // Botões de período rápido
+    document.querySelectorAll('.periodo-rapido-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.periodo-rapido-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            filtroTipo = 'ultimos_dias';
+            filtroDias = parseInt(this.dataset.periodo);
+            
+            // Esconder todos os seletores pois estamos usando período rápido
+            const seletores = document.querySelectorAll('.periodo-seletor');
+            seletores.forEach(seletor => seletor.style.display = 'none');
+            
+            // Carregar dados automaticamente
             carregarDadosDashboard();
         });
+    });
+    
+    // Mudança no seletor de ano
+    document.getElementById('ano-select').addEventListener('change', function() {
+        filtroAno = parseInt(this.value);
+    });
+    
+    // Mudança no seletor de mês
+    document.getElementById('mes-select').addEventListener('change', function() {
+        filtroMes = parseInt(this.value);
+    });
+    
+    // Mudança no seletor de trimestre
+    document.getElementById('trimestre-select').addEventListener('change', function() {
+        filtroTrimestre = parseInt(this.value);
+    });
+    
+    // Mudança no seletor de semana
+    document.getElementById('semana-input').addEventListener('change', function() {
+        filtroSemana = this.value;
+    });
+    
+    // Botão de aplicar filtro
+    document.getElementById('btnAplicarFiltro').addEventListener('click', function() {
+        carregarDadosDashboard();
     });
     
     // Botão de atualizar
@@ -462,6 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ----- Inicialização -----
     console.log("Inicializando dashboard...");
+    inicializarSeletoresPeriodo();
     carregarDadosDashboard();
     
     // Atualizar dados a cada 5 minutos

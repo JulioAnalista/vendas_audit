@@ -57,25 +57,73 @@ def api_vendas_dashboard():
         conn = get_db()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         
-        # Parâmetros para filtro
-        periodo = request.args.get('periodo', 'mes')
-        print(f"Período solicitado: {periodo}")
+        # Coleta dos parâmetros de filtro
+        tipo_filtro = request.args.get('tipo_filtro', 'ultimos_dias')
+        print(f"Tipo de filtro: {tipo_filtro}")
         
-        # Define o intervalo de datas com base no período
+        # Define o intervalo de datas com base no tipo de filtro e parâmetros
         hoje = datetime.datetime.now()
         
-        if periodo == 'semana':
-            data_inicio = hoje - datetime.timedelta(days=7)
-        elif periodo == 'mes':
-            data_inicio = hoje - datetime.timedelta(days=30)
-        elif periodo == 'trimestre':
-            data_inicio = hoje - datetime.timedelta(days=90)
-        elif periodo == 'ano':
-            data_inicio = hoje - datetime.timedelta(days=365)
-        else:
-            data_inicio = hoje - datetime.timedelta(days=30)  # Default: último mês
+        if tipo_filtro == 'ultimos_dias':
+            dias = int(request.args.get('dias', 30))
+            data_inicio = hoje - datetime.timedelta(days=dias)
+            periodo_desc = f"Últimos {dias} dias"
+        
+        elif tipo_filtro == 'ano':
+            ano = int(request.args.get('ano', hoje.year))
+            data_inicio = datetime.datetime(ano, 1, 1)
+            data_fim = datetime.datetime(ano, 12, 31, 23, 59, 59)
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar o ano inteiro
+            periodo_desc = f"Ano {ano}"
             
-        print(f"Intervalo de datas: {data_inicio} até {hoje}")
+        elif tipo_filtro == 'trimestre':
+            ano = int(request.args.get('ano', hoje.year))
+            trimestre = int(request.args.get('trimestre', ((hoje.month-1)//3)+1))
+            mes_inicio = (trimestre - 1) * 3 + 1
+            mes_fim = mes_inicio + 2
+            
+            data_inicio = datetime.datetime(ano, mes_inicio, 1)
+            if mes_fim == 12:
+                data_fim = datetime.datetime(ano, mes_fim, 31, 23, 59, 59)
+            else:
+                data_fim = datetime.datetime(ano, mes_fim + 1, 1) - datetime.timedelta(seconds=1)
+            
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar o trimestre inteiro
+            periodo_desc = f"{trimestre}º Trimestre de {ano}"
+            
+        elif tipo_filtro == 'mes':
+            ano = int(request.args.get('ano', hoje.year))
+            mes = int(request.args.get('mes', hoje.month))
+            
+            data_inicio = datetime.datetime(ano, mes, 1)
+            if mes == 12:
+                data_fim = datetime.datetime(ano, 12, 31, 23, 59, 59)
+            else:
+                data_fim = datetime.datetime(ano, mes + 1, 1) - datetime.timedelta(seconds=1)
+            
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar o mês inteiro
+            nomes_meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+            periodo_desc = f"{nomes_meses[mes-1]} de {ano}"
+            
+        elif tipo_filtro == 'semana':
+            data_str = request.args.get('data', hoje.strftime('%Y-%m-%d'))
+            data_ref = datetime.datetime.strptime(data_str, '%Y-%m-%d')
+            
+            # Calcular o início da semana (segunda-feira)
+            dia_semana = data_ref.weekday()  # 0 = segunda, 6 = domingo
+            data_inicio = data_ref - datetime.timedelta(days=dia_semana)
+            data_fim = data_inicio + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
+            
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar a semana inteira
+            periodo_desc = f"Semana de {data_inicio.strftime('%d/%m/%Y')} a {data_fim.strftime('%d/%m/%Y')}"
+            
+        else:  # Default: últimos 30 dias
+            data_inicio = hoje - datetime.timedelta(days=30)
+            periodo_desc = "Últimos 30 dias"
+            
+        print(f"Período: {periodo_desc}")
+        print(f"Intervalo de datas: de {data_inicio} até {hoje}")
         
         # Verificar se existem registros de saída
         cursor.execute("""
@@ -134,8 +182,11 @@ def api_vendas_dashboard():
         
         # Preparando o resultado
         resultado = {
-            'periodo': periodo,
+            'periodo': periodo_desc,
             'tipo_operacao': tipo_operacao,
+            'data_inicio': data_inicio.strftime('%Y-%m-%d'),
+            'data_fim': hoje.strftime('%Y-%m-%d'),
+            'tipo_filtro': tipo_filtro,
             'total_nfes': result_totais['total_nfes'] if result_totais['total_nfes'] else 0,
             'valor_total': float(result_totais['valor_total']) if result_totais['valor_total'] else 0,
             'vendas_por_dia': vendas_por_dia
@@ -155,23 +206,70 @@ def api_produtos_mais_vendidos():
         conn = get_db()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         
-        # Parâmetros para filtro
-        periodo = request.args.get('periodo', 'mes')
+        # Coleta dos parâmetros de filtro
+        tipo_filtro = request.args.get('tipo_filtro', 'ultimos_dias')
         limite = int(request.args.get('limite', 10))
         
-        # Define o intervalo de datas com base no período
+        # Define o intervalo de datas com base no tipo de filtro e parâmetros
         hoje = datetime.datetime.now()
         
-        if periodo == 'semana':
-            data_inicio = hoje - datetime.timedelta(days=7)
-        elif periodo == 'mes':
+        if tipo_filtro == 'ultimos_dias':
+            dias = int(request.args.get('dias', 30))
+            data_inicio = hoje - datetime.timedelta(days=dias)
+            periodo_desc = f"Últimos {dias} dias"
+        
+        elif tipo_filtro == 'ano':
+            ano = int(request.args.get('ano', hoje.year))
+            data_inicio = datetime.datetime(ano, 1, 1)
+            data_fim = datetime.datetime(ano, 12, 31, 23, 59, 59)
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar o ano inteiro
+            periodo_desc = f"Ano {ano}"
+            
+        elif tipo_filtro == 'trimestre':
+            ano = int(request.args.get('ano', hoje.year))
+            trimestre = int(request.args.get('trimestre', ((hoje.month-1)//3)+1))
+            mes_inicio = (trimestre - 1) * 3 + 1
+            mes_fim = mes_inicio + 2
+            
+            data_inicio = datetime.datetime(ano, mes_inicio, 1)
+            if mes_fim == 12:
+                data_fim = datetime.datetime(ano, mes_fim, 31, 23, 59, 59)
+            else:
+                data_fim = datetime.datetime(ano, mes_fim + 1, 1) - datetime.timedelta(seconds=1)
+            
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar o trimestre inteiro
+            periodo_desc = f"{trimestre}º Trimestre de {ano}"
+            
+        elif tipo_filtro == 'mes':
+            ano = int(request.args.get('ano', hoje.year))
+            mes = int(request.args.get('mes', hoje.month))
+            
+            data_inicio = datetime.datetime(ano, mes, 1)
+            if mes == 12:
+                data_fim = datetime.datetime(ano, 12, 31, 23, 59, 59)
+            else:
+                data_fim = datetime.datetime(ano, mes + 1, 1) - datetime.timedelta(seconds=1)
+            
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar o mês inteiro
+            nomes_meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+            periodo_desc = f"{nomes_meses[mes-1]} de {ano}"
+            
+        elif tipo_filtro == 'semana':
+            data_str = request.args.get('data', hoje.strftime('%Y-%m-%d'))
+            data_ref = datetime.datetime.strptime(data_str, '%Y-%m-%d')
+            
+            # Calcular o início da semana (segunda-feira)
+            dia_semana = data_ref.weekday()  # 0 = segunda, 6 = domingo
+            data_inicio = data_ref - datetime.timedelta(days=dia_semana)
+            data_fim = data_inicio + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
+            
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar a semana inteira
+            periodo_desc = f"Semana de {data_inicio.strftime('%d/%m/%Y')} a {data_fim.strftime('%d/%m/%Y')}"
+            
+        else:  # Default: últimos 30 dias
             data_inicio = hoje - datetime.timedelta(days=30)
-        elif periodo == 'trimestre':
-            data_inicio = hoje - datetime.timedelta(days=90)
-        elif periodo == 'ano':
-            data_inicio = hoje - datetime.timedelta(days=365)
-        else:
-            data_inicio = hoje - datetime.timedelta(days=30)  # Default: último mês
+            periodo_desc = "Últimos 30 dias"
             
         # Verificar se existem registros de saída
         cursor.execute("""
@@ -213,8 +311,11 @@ def api_produtos_mais_vendidos():
         
         # Preparando o resultado
         resultado = {
-            'periodo': periodo,
+            'periodo': periodo_desc,
             'tipo_operacao': tipo_operacao,
+            'data_inicio': data_inicio.strftime('%Y-%m-%d'),
+            'data_fim': hoje.strftime('%Y-%m-%d'),
+            'tipo_filtro': tipo_filtro,
             'produtos': produtos
         }
         
@@ -277,22 +378,69 @@ def api_produtos_por_categoria():
         conn = get_db()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         
-        # Parâmetros para filtro
-        periodo = request.args.get('periodo', 'mes')
+        # Coleta dos parâmetros de filtro
+        tipo_filtro = request.args.get('tipo_filtro', 'ultimos_dias')
         
-        # Define o intervalo de datas com base no período
+        # Define o intervalo de datas com base no tipo de filtro e parâmetros
         hoje = datetime.datetime.now()
         
-        if periodo == 'semana':
-            data_inicio = hoje - datetime.timedelta(days=7)
-        elif periodo == 'mes':
+        if tipo_filtro == 'ultimos_dias':
+            dias = int(request.args.get('dias', 30))
+            data_inicio = hoje - datetime.timedelta(days=dias)
+            periodo_desc = f"Últimos {dias} dias"
+        
+        elif tipo_filtro == 'ano':
+            ano = int(request.args.get('ano', hoje.year))
+            data_inicio = datetime.datetime(ano, 1, 1)
+            data_fim = datetime.datetime(ano, 12, 31, 23, 59, 59)
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar o ano inteiro
+            periodo_desc = f"Ano {ano}"
+            
+        elif tipo_filtro == 'trimestre':
+            ano = int(request.args.get('ano', hoje.year))
+            trimestre = int(request.args.get('trimestre', ((hoje.month-1)//3)+1))
+            mes_inicio = (trimestre - 1) * 3 + 1
+            mes_fim = mes_inicio + 2
+            
+            data_inicio = datetime.datetime(ano, mes_inicio, 1)
+            if mes_fim == 12:
+                data_fim = datetime.datetime(ano, mes_fim, 31, 23, 59, 59)
+            else:
+                data_fim = datetime.datetime(ano, mes_fim + 1, 1) - datetime.timedelta(seconds=1)
+            
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar o trimestre inteiro
+            periodo_desc = f"{trimestre}º Trimestre de {ano}"
+            
+        elif tipo_filtro == 'mes':
+            ano = int(request.args.get('ano', hoje.year))
+            mes = int(request.args.get('mes', hoje.month))
+            
+            data_inicio = datetime.datetime(ano, mes, 1)
+            if mes == 12:
+                data_fim = datetime.datetime(ano, 12, 31, 23, 59, 59)
+            else:
+                data_fim = datetime.datetime(ano, mes + 1, 1) - datetime.timedelta(seconds=1)
+            
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar o mês inteiro
+            nomes_meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+            periodo_desc = f"{nomes_meses[mes-1]} de {ano}"
+            
+        elif tipo_filtro == 'semana':
+            data_str = request.args.get('data', hoje.strftime('%Y-%m-%d'))
+            data_ref = datetime.datetime.strptime(data_str, '%Y-%m-%d')
+            
+            # Calcular o início da semana (segunda-feira)
+            dia_semana = data_ref.weekday()  # 0 = segunda, 6 = domingo
+            data_inicio = data_ref - datetime.timedelta(days=dia_semana)
+            data_fim = data_inicio + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
+            
+            hoje = data_fim  # Usando data_fim em vez de hoje para mostrar a semana inteira
+            periodo_desc = f"Semana de {data_inicio.strftime('%d/%m/%Y')} a {data_fim.strftime('%d/%m/%Y')}"
+            
+        else:  # Default: últimos 30 dias
             data_inicio = hoje - datetime.timedelta(days=30)
-        elif periodo == 'trimestre':
-            data_inicio = hoje - datetime.timedelta(days=90)
-        elif periodo == 'ano':
-            data_inicio = hoje - datetime.timedelta(days=365)
-        else:
-            data_inicio = hoje - datetime.timedelta(days=30)  # Default: último mês
+            periodo_desc = "Últimos 30 dias"
             
         # Verificar se existem registros de saída
         cursor.execute("""
@@ -330,7 +478,17 @@ def api_produtos_por_categoria():
                 'valor_total': float(row['valor_total']) if row['valor_total'] else 0
             })
         
-        return jsonify({'tipo_operacao': tipo_operacao, 'produtos': produtos_por_ncm})
+        # Preparando o resultado
+        resultado = {
+            'periodo': periodo_desc,
+            'tipo_operacao': tipo_operacao,
+            'data_inicio': data_inicio.strftime('%Y-%m-%d'),
+            'data_fim': hoje.strftime('%Y-%m-%d'),
+            'tipo_filtro': tipo_filtro,
+            'produtos': produtos_por_ncm
+        }
+        
+        return jsonify(resultado)
     except Exception as e:
         app.logger.error(f"Erro na API de produtos por categoria: {str(e)}")
         return jsonify({"error": str(e)}), 500
