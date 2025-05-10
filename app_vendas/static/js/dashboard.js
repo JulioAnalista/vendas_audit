@@ -324,6 +324,45 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const ctx = document.getElementById('chart-vendas').getContext('2d');
         
+        // Verificar se há dados para mostrar
+        if (datas.length === 0) {
+            // Se não houver dados, mostrar mensagem no gráfico
+            if (chartVendas) {
+                chartVendas.destroy();
+                chartVendas = null;
+            }
+            
+            const canvas = document.getElementById('chart-vendas');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillText('Nenhum dado disponível para o período selecionado.', canvas.width / 2, canvas.height / 2);
+            
+            // Também mostrar alerta na página
+            const alertaDiv = document.createElement('div');
+            alertaDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
+            alertaDiv.setAttribute('role', 'alert');
+            alertaDiv.innerHTML = `
+                <strong>Nenhum dado encontrado!</strong> Não existem dados para o período de ${dados.periodo}.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            // Adicionar alerta antes do gráfico
+            const chartContainer = document.querySelector('.chart-container');
+            if (chartContainer && !document.querySelector('.alert-warning')) {
+                chartContainer.parentNode.insertBefore(alertaDiv, chartContainer);
+            }
+            
+            return;
+        } else {
+            // Remover alerta se existir
+            const alerta = document.querySelector('.alert-warning');
+            if (alerta) {
+                alerta.remove();
+            }
+        }
+        
         if (chartVendas) {
             chartVendas.data.labels = datas;
             chartVendas.data.datasets[0].data = quantidades;
@@ -451,6 +490,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const quantidades = dados.map(item => item.quantidade);
         
         const ctx = document.getElementById('chart-mensal').getContext('2d');
+        
+        // Verificar se há dados para mostrar
+        if (meses.length === 0) {
+            // Se não houver dados, mostrar mensagem no gráfico
+            if (chartMensal) {
+                chartMensal.destroy();
+                chartMensal = null;
+            }
+            
+            const canvas = document.getElementById('chart-mensal');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillText('Nenhum dado disponível para o ano selecionado.', canvas.width / 2, canvas.height / 2);
+            
+            return;
+        }
         
         if (chartMensal) {
             chartMensal.data.labels = meses;
@@ -592,4 +649,222 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Atualizar dados a cada 5 minutos
     setInterval(carregarDadosDashboard, 5 * 60 * 1000);
+    
+    // ----- Dashboard de Produtos -----
+    
+    // Variáveis para o dashboard de produtos
+    let tabelaProdutos = null;
+    let produtosData = [];
+    let paginaAtual = 1;
+    let tamanhoPagina = 10;
+    let totalPaginas = 0;
+    
+    // Função para abrir o modal de produtos
+    function abrirModalProdutos() {
+        // Limpar tabela de produtos existente
+        document.getElementById('produtos-table-body').innerHTML = '';
+        
+        // Resetar paginação
+        paginaAtual = 1;
+        
+        // Carregar produtos
+        carregarProdutos();
+        
+        // Abrir modal
+        const modalProdutos = new bootstrap.Modal(document.getElementById('modalProdutos'));
+        modalProdutos.show();
+    }
+    
+    // Função para carregar produtos
+    async function carregarProdutos(pagina = 1, limite = 10, filtro = '') {
+        try {
+            // Mostrar loader
+            document.getElementById('produtos-loader').style.display = 'block';
+            document.getElementById('produtos-table-body').innerHTML = '';
+            
+            // Construir parâmetros
+            const params = new URLSearchParams();
+            params.append('pagina', pagina);
+            params.append('limite', limite);
+            
+            if (filtro) {
+                params.append('filtro', filtro);
+            }
+            
+            // Fazer requisição
+            const resposta = await fetch(`/api/produtos/listar?${params.toString()}`);
+            
+            if (!resposta.ok) {
+                throw new Error(`Erro HTTP: ${resposta.status}`);
+            }
+            
+            const dados = await resposta.json();
+            produtosData = dados.produtos;
+            totalPaginas = Math.ceil(dados.total / limite);
+            
+            // Atualizar informações de paginação
+            document.getElementById('produtos-pagina-atual').textContent = pagina;
+            document.getElementById('produtos-total-paginas').textContent = totalPaginas;
+            
+            // Preencher tabela
+            preencherTabelaProdutos(produtosData);
+            
+            // Esconder loader
+            document.getElementById('produtos-loader').style.display = 'none';
+            
+            // Habilitar/desabilitar botões de paginação
+            document.getElementById('btn-anterior').disabled = pagina <= 1;
+            document.getElementById('btn-proximo').disabled = pagina >= totalPaginas;
+            
+        } catch (erro) {
+            console.error('Erro ao carregar produtos:', erro);
+            document.getElementById('produtos-loader').style.display = 'none';
+            document.getElementById('produtos-table-body').innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-danger">
+                        Erro ao carregar produtos: ${erro.message}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+    
+    // Função para preencher a tabela de produtos
+    function preencherTabelaProdutos(produtos) {
+        const tbody = document.getElementById('produtos-table-body');
+        tbody.innerHTML = '';
+        
+        if (produtos.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center">
+                        Nenhum produto encontrado.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        produtos.forEach(produto => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', () => mostrarDetalhesProduto(produto));
+            
+            // Código do produto
+            const tdCodigo = document.createElement('td');
+            tdCodigo.textContent = produto.codigo || '-';
+            tr.appendChild(tdCodigo);
+            
+            // EAN (código de barras)
+            const tdEan = document.createElement('td');
+            tdEan.textContent = produto.ean || '-';
+            tr.appendChild(tdEan);
+            
+            // Nome do produto
+            const tdNome = document.createElement('td');
+            tdNome.textContent = produto.nome;
+            tr.appendChild(tdNome);
+            
+            // NCM
+            const tdNcm = document.createElement('td');
+            tdNcm.textContent = produto.ncm || '-';
+            tr.appendChild(tdNcm);
+            
+            // Preço
+            const tdPreco = document.createElement('td');
+            tdPreco.textContent = formatarMoeda(produto.preco_medio || 0);
+            tdPreco.className = 'text-end';
+            tr.appendChild(tdPreco);
+            
+            tbody.appendChild(tr);
+        });
+    }
+    
+    // Função para mostrar detalhes do produto
+    function mostrarDetalhesProduto(produto) {
+        // Fechar modal de produtos
+        const modalProdutos = bootstrap.Modal.getInstance(document.getElementById('modalProdutos'));
+        modalProdutos.hide();
+        
+        // Preencher modal de detalhes
+        document.getElementById('produto-detalhe-titulo').textContent = produto.nome;
+        document.getElementById('produto-detalhe-codigo').textContent = produto.codigo || '-';
+        document.getElementById('produto-detalhe-ean').textContent = produto.ean || '-';
+        document.getElementById('produto-detalhe-ncm').textContent = produto.ncm || '-';
+        document.getElementById('produto-detalhe-descricao').textContent = produto.descricao || 'Sem descrição disponível';
+        document.getElementById('produto-detalhe-preco').textContent = formatarMoeda(produto.preco_medio || 0);
+        document.getElementById('produto-detalhe-unidade').textContent = produto.unidade || '-';
+        
+        // Mostrar histórico de preços se disponível
+        const historicoPrecos = document.getElementById('produto-historico-precos');
+        historicoPrecos.innerHTML = '';
+        
+        if (produto.historico_precos && produto.historico_precos.length > 0) {
+            produto.historico_precos.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                const tdData = document.createElement('td');
+                tdData.textContent = item.data;
+                tr.appendChild(tdData);
+                
+                const tdPreco = document.createElement('td');
+                tdPreco.textContent = formatarMoeda(item.preco);
+                tdPreco.className = 'text-end';
+                tr.appendChild(tdPreco);
+                
+                historicoPrecos.appendChild(tr);
+            });
+        } else {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 2;
+            td.className = 'text-center';
+            td.textContent = 'Nenhum histórico disponível';
+            tr.appendChild(td);
+            historicoPrecos.appendChild(tr);
+        }
+        
+        // Abrir modal de detalhes
+        const modalDetalhes = new bootstrap.Modal(document.getElementById('modalProdutoDetalhes'));
+        modalDetalhes.show();
+    }
+    
+    // Função para buscar produtos
+    function buscarProdutos() {
+        const filtro = document.getElementById('produtos-busca').value.trim();
+        paginaAtual = 1; // Resetar para primeira página
+        carregarProdutos(paginaAtual, tamanhoPagina, filtro);
+    }
+    
+    // ----- Event Listeners para Dashboard de Produtos -----
+    
+    // Botão para abrir modal de produtos
+    document.getElementById('btnVerProdutos').addEventListener('click', abrirModalProdutos);
+    
+    // Botões de paginação
+    document.getElementById('btn-anterior').addEventListener('click', () => {
+        if (paginaAtual > 1) {
+            paginaAtual--;
+            const filtro = document.getElementById('produtos-busca').value.trim();
+            carregarProdutos(paginaAtual, tamanhoPagina, filtro);
+        }
+    });
+    
+    document.getElementById('btn-proximo').addEventListener('click', () => {
+        if (paginaAtual < totalPaginas) {
+            paginaAtual++;
+            const filtro = document.getElementById('produtos-busca').value.trim();
+            carregarProdutos(paginaAtual, tamanhoPagina, filtro);
+        }
+    });
+    
+    // Campo de busca
+    document.getElementById('produtos-busca').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            buscarProdutos();
+        }
+    });
+    
+    // Botão de busca
+    document.getElementById('btn-buscar-produtos').addEventListener('click', buscarProdutos);
 }); 
